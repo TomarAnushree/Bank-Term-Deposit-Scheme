@@ -1,0 +1,466 @@
+---
+title: "Bank Term Deposit Scheme"
+author: "Anushree Tomar"
+date: "7-10-2021"
+output:
+  word_document: default
+  pdf_document: default
+  html_notebook: default
+subtitle: Data Analysis and Approach to Model Building
+---swA
+
+The banks are moving with the pace of technology and incorporating different techniques to get the clients on-board. There are multiple marketing techniques in the market different banks are resorting to get people involved into different banking schemes. One such technique is phone calling the clients, getting their details and letting them know about the different schemes. It might require multiple calls to the same client to figure out if the client will be on-board or not. It is where Machine Learning can be incorporated and the result can be predicted based on the information received. This information will be valuable to pay more attention to the customers who might be willing to get on-board and be in their contact. The models can be trained on the data set and the banks can plan out a strategy which will be beneficial for them. 
+
+# [Dataset Source:](https://www.techgig.com/geekgoddess/amex-ai-ml-hackathon-geek-goddess-2021)
+
+The data sets are provided with the details of the campaign which we used to build a model which can predict if the client will say ‘yes’ or ‘no’ for the scheme. The scheme in question is term deposit and is the same for all the clients. If the client gets on-board, it is denoted with ‘yes’ and if he does not, it is denoted with ‘no’.
+
+
+# Data Description:
+
+The data set consists of the 21 attributes along with their values. The term deposit is denoted with variable `y`. The data can be understood in the 4 parts:
+
+1. Bank client data attributes
+
+2. Related with the last contact of the current campaign attributes
+
+3. Other Attributes
+
+4. Social and Economic Context Attributes
+
+
+
+# 1.	Bank client data attributes
+
+|Attribute |	Values      |
+|----------|--------------|
+|key       |	1, 2. 3, 4….|
+|age       |	numeric     |
+|job       |	type of job (categorical:'admin.','blue-collar','entrepreneur','housemaid',|
+|          |    'management','retired','self-employed','services','student','technician','unemployed','unknown')|
+|marital   |	marital status (categorical: 'divorced','married','single','unknown';|
+|          |   note: 'divorced' means divorced or widowed)|
+|education |	categorical: 'basic.4y','basic.6y','basic.9y','high.school','illiterate',|
+|           |     'professional.course','university.degree','unknown'|
+|default|	has credit in default? (categorical: 'no','yes','unknown')|
+|housing|	has housing loan? (categorical: ‘no’, ‘yes’, ‘unknown’)
+|loan	|has personal loan? (categorical: 'no','yes','unknown')|
+
+
+
+# 2. Related with the last contact of the current campaign attributes
+
+|Attributes	|Values|
+|-----------|------|
+|contact    |	contact communication type (categorical: 'cellular','telephone')|
+|month      |	last contact month of year (categorical: 'jan', 'feb', 'mar', ..., 'nov', 'dec')|
+|day_of_week|	last contact day of the week (categorical: 'mon','tue','wed','thu','fri')|
+|duration  	|last contact duration, in seconds (numeric)|
+
+
+`*Note*: duration attribute highly affects the output target (e.g., if duration=0 then y='no').
+Yet, the duration is not known before a call is performed. Also, after the end of the call y 
+is obviously known.`
+
+
+
+# 3. Other Attributes
+
+|Attributes	|Values|
+|-----------|------|
+|campaign	|number of contacts performed during this campaign and for this client (numeric, includes last contact)|
+|pdays|	number of days that passed by after the client was last contacted from a previous campaign |
+|     |  (numeric; 999 means client was not previously contacted)|
+|previous	|number of contacts performed before this campaign and for this client (numeric)|
+|poutcome	|outcome of the previous marketing campaign (categorical: 'failure','nonexistent','success')|
+
+
+
+
+# 4. Social and Economic Context Attributes
+
+|Attributes	|Values|
+|------------|------|
+|emp.var.rate|employment variation rate - quarterly indicator (numeric)|
+|cons.price.idx|consumer price index - monthly indicator (numeric)|
+|cons.conf.idx|consumer confidence index - monthly indicator (numeric)|
+|euribor3m|euribor 3 month rate - daily indicator (numeric)|
+|nr.employed|number of employees - quarterly indicator (numeric)|
+
+
+# Data Dictionary
+
+Here's a brief version of what you'll find in the data description file.
+
+|Variable	|Description|
+|----------|----------|
+|key|	Unique Key|
+|y|	If the client would say yes or no for the deposit scheme|
+
+
+# Data Insights
+
+## Import Libraries
+
+First we import libraries required for Exploratory Data Analysis.
+```{r Import Libraries, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(data.table)
+library(DataExplorer)
+library(ggplot2)
+library(scales)
+library(corrplot)
+```
+
+# Import Files 
+
+Let's Analyse train and test data sets:-
+```{r include=FALSE}
+train<-fread("G:\\Anushree G4\\hachthon\\Bank Term Deposit\\Complete-Data-Set\\Training_Dataset_Time_Deposit - Sheet1.csv",stringsAsFactors = T,na.strings = "")
+test<-fread("G:\\Anushree G4\\hachthon\\Bank Term Deposit\\Complete-Data-Set\\Testing_Dataset_Time_Deposit - Sheet1 (1).csv",stringsAsFactors = T,na.strings = "")
+
+Sample_Submission<-fread("G:\\Anushree G4\\hachthon\\Bank Term Deposit\\Complete-Data-Set\\Sample Submission Updated - Sheet1.csv")
+```
+
+# Observing Data
+
+Here we will observe the data:-
+
+## Train Dataset
+```{r echo=FALSE}
+head(train)
+```
+
+## Test Dataset
+```{r echo=FALSE}
+head(test)
+```
+
+
+# Check for missing value
+
+## Train Dataset
+```{r echo=FALSE}
+introduce(train)
+```
+## Test Dataset
+```{r echo=FALSE}
+introduce(test)
+```
+
+we checked train and test dataset for missing values but fortunately the data is cleaned.
+
+# Find Duplicates in the data
+
+## Dimension of the data
+```{r echo=FALSE}
+dim(unique(train))
+```
+
+## Find Duplicates
+```{r echo=FALSE}
+
+train[duplicated(train),]
+```
+ 
+There is no duplicate records in the dataset.
+
+# Data Visualization
+
+# Proportion of the target variable
+```{r echo=FALSE}
+print("Proportion of target variable in the train data")
+prop.table(table(train[,y]))*100
+
+
+```
+
+# Percent distribution of target variable
+```{r echo=FALSE}
+bp<-ggplot(train, aes(x = factor(y))) +
+  geom_bar(aes(y = (..count..)/sum(..count..),fill=factor(y))) +
+  geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count",   vjust = -0.3) + scale_y_continuous(labels = percent)+labs(x="Term Deposit",y = "Percent of Term Deposit",fill="Term Deposit")
+
+pie <- bp + coord_polar("y", start=0)
+pie
+```
+As you can see that 96% of the clients are not interested in the Term Deposit Scheme.But the Bank is interested in those clients who are interested in the scheme from the business point of view so we need to upsample the lower class in the dataset before model building.
+
+# Exploratory Data Analysis
+
+# Basic statistics
+
+# Summary Stats of train data
+```{r echo=FALSE}
+summary(train)
+```
+# Summary Stats of test data
+```{r echo=FALSE}
+summary(test)
+```
+Attributes `education`,`default` and `month` have new levels in the test data.
+
+# Correlation of Numeric/Integer attributes
+
+Find the correlation among continuous variable
+
+```{r echo=FALSE,width=500,height=500}
+num<-train[, lapply(train, class) == 'integer', with = FALSE]
+int<-train[, lapply(train, class) == 'numeric', with = FALSE]
+continuous<-cbind(num,int)
+M<-cor(continuous[,-'key'])
+corrplot(M, method = 'color')
+```
+
+
+we found no strong Positive and negative relationship between the variables in the Correlation plot except `euribor3m`(euribor 3 month rate)  and `emp.var.rate`(employment variation rate) which are Positively correlated to each other.while `cons.price.idx`(consumer price index) and `nr.employed` are moderately(+) correlated to `emp.var.rate`.`cons.conf.idx` and `cons.price.idx` are moderately(-) correlated.
+
+
+# Distribution of the Term Deposit by age
+
+Lets analyse which age group is accepting or rejecting the Term Deposit scheme:-
+
+```{r echo=FALSE}
+ggplot(train, aes(x=age,fill=y)) +
+  geom_bar()+labs(title ="Age vs Term Deposit", x="Age",y = "Count  ",fill="Term Deposit")
+
+```
+As you can see, the minimum age of the clients contacted by the bank is 20 years and the maximum is 60 years.
+From the above graph you can visualize that most of the clients who accepted the Term Deposit scheme is lie mostly between 30 years to 50 years.
+
+# Distribution of Age and Job by accepted Term Deposit scheme
+
+Let's go more deeper into it where we will find the clients who accepted the term deposit scheme belong to which kind of `job`. 
+```{r echo=FALSE}
+new<-train[y=='yes',]
+head(new)
+```
+
+
+```{r echo=FALSE}
+ggplot(new, aes(x=age,fill=y)) +
+  geom_bar()+facet_wrap(factor(new$job))+labs(title ="Term Deposit by Age And Job", x="Age",y = "Count  ",fill="Term Deposit")
+```
+From the above graph we can assume that our future Potential clients may belong to `blue-collar`,`technician`,`admin`, and `management`(decreasing order) type of job .
+
+# Distribution of the Term Deposit by duration
+
+Now analyse the affect of duration on Term Deposit scheme.
+
+```{r echo=FALSE}
+ggplot(train, aes(x=duration,fill=y)) +
+  geom_bar()+facet_wrap(factor(train$y))+labs(title ="duration vs Term Deposit", x="duration",y = "Count  ",fill="Term Deposit")
+
+```
+
+From the graph it is clear that clients who contacted for a very short duration  belong to `No` category.
+As the duration can be obtained after the phone call is performed it is obvious that duration is highly correlated to the target variable. So that at the time of Feature engineering we can drop this variable. 
+
+
+
+# Distribution of campaign and education by Accepted Term Deposit 
+
+Let's analyse how many contacts performed during this campaign. 
+
+```{r echo=FALSE}
+
+ggplot(new, aes(x=campaign,fill=marital)) +
+  geom_bar()+facet_wrap(factor(new$education))+labs(title ="Analyse Term Deposit by Campaign and Education", x="campaign",y = "Count  ",fill="marital")
+
+```
+Graphical analysis saying that number of contacts performed on clients during campaign are having mostly `university.degree` followed by `high.school` and `professional.course` degree.
+and most of the clients are married as usual.
+
+
+# Relationship of Loan with accepted Target scheme 
+
+Now analyse the status of loan and credit in default of the clients who accepted the scheme-
+```{r echo=FALSE}
+ggplot(new, aes(x = housing,fill=loan)) +
+  geom_bar() +facet_wrap(~factor(default))+
+  labs(title ="Default", x="Housing Loan",y = "Count",fill="Personal loan")
+
+  
+```
+From the graph it is clear that most of the clients who accepted the term deposit scheme have `no` credit in default.
+
+secondly fewer number of clients have personal loans.
+
+Thirdly there are an equal number of clients with or without housing loans.
+
+# Relationship of previous outcome with accepted Target scheme 
+
+```{r echo=FALSE}
+ggplot(new, aes(x = poutcome,fill=contact)) +
+  geom_bar() +facet_wrap(~factor(month))+
+  labs(title ="Month", x="Previous outcome",y = "Count",fill="contact Type")
+
+  
+```
+Most of the clients belong to `nonexistent` categories who accepted the Term deposit scheme and contacted by telephone.
+secondly they were contacted in the month of `jun` followed by `aug` and `may`.
+
+
+# previous outcome with in day_of_week and accepted Target scheme 
+
+```{r echo=FALSE}
+ggplot(new, aes(x = poutcome,fill=factor(day_of_week))) +
+  geom_bar() +facet_wrap(~factor(day_of_week))+
+  labs(title ="day_of_week", x="Previous outcome",y = "Count",fill='day_of_week')
+
+```
+The result of  the previous outcome suggests that clients mostly belong to `nonexistent` categories and their count is more on 'wed' followed by `tue` and `mon`.
+
+# Approach To create Predictive Model
+
+## Feature Engineering
+
+Our next step is to perform Feature Engineering on the data so that we can get a best performing model.
+
+**Steps involved in Feature Engineering:-**
+
+* Grouping of `age` attribute
+
+* Drop `duration` column
+
+* Standardize numeric data
+
+* Balancing the data by smote technique
+
+* Re-leveling the train Data
+
+
+# Grouping(Binning) of `age` attribute 
+
+In this step we will create groups of the age attribute and label them as 0-4, 5-9, 10-14 and so on.
+
+```{r echo=FALSE}
+#Binning of Age 
+label <- c(paste(seq(0, 95, by = 5), seq(0 + 5 - 1, 100 - 1, by = 5),
+                sep = "-"), paste(100, "+", sep = ""))
+train$age <- cut(train$age, breaks = c(seq(0, 100, by = 5), Inf), labels = label, right = FALSE)
+
+test$age <- cut(test$age, breaks = c(seq(0, 100, by = 5), Inf), labels = label, right = FALSE)
+
+# Drop duration
+
+train<-train[,-'duration']
+#test<-test[,-'duration']
+head(train)
+
+
+```
+
+
+# Standardize the data
+
+In this step we Standardize numerical variables to the same range where mean and standard deviation of all numerical variables will be 0 and 1 respectively. 
+
+```{r echo=FALSE}
+train[,c("campaign","pdays","previous" ,"emp.var.rate","cons.price.idx", "cons.conf.idx", "euribor3m","nr.employed")]<-lapply(train[,c("campaign","pdays","previous","emp.var.rate",
+"cons.price.idx", "cons.conf.idx","euribor3m","nr.employed" )], scale)
+
+#test[,c("campaign","pdays","previous" ,"emp.var.rate","cons.price.idx", "cons.conf.idx", #"euribor3m","nr.employed")]<-lapply(test[,c("campaign","pdays","previous","emp.var.rate",
+#"cons.price.idx", "cons.conf.idx","euribor3m","nr.employed" )], scale)
+
+head(train)
+
+```
+```{r echo=FALSE}
+summary(train[,c('pdays','emp.var.rate')])
+sd<-sd(train$pdays)
+paste('standard deviation of pdays =', sd)
+
+```
+
+
+# Creating Balanced data
+
+```{r echo=FALSE}
+load("G:/Anushree G4/hachthon/Bank Term Deposit/Bank Term Deposit Scheme/bal_100.RData")
+#balanced_data <-  SMOTE_NC(train[,-'key'], 'y', perc_maj=100) 
+head(balanced_data)
+```
+
+
+```{r echo=FALSE}
+table(balanced_data$y)
+
+```
+
+# Re-Leveling of Attributes
+
+We found new levels in the test data so that to solve our problem we releveled the train data as a test dataset.  
+```{r echo=FALSE}
+levels(balanced_data$education)<-levels(test$education)
+levels(balanced_data$default)<-levels(test$default)
+levels(balanced_data$month)<-levels(test$month)
+#levels(balanced_data$age)<-levels(test$age)
+
+```
+
+## Check levels after Re-leveling
+```{r echo=FALSE}
+print("education levels in balanced_data and test dataset")
+levels(balanced_data$education)
+
+levels(test$education)
+```
+
+
+# Model Building
+
+After Feature Engineering our next step is to partition the data into train data and test data in the ratio of 70/30.
+
+# Machine learning algorithms
+
+Classification algorithms we applied in the development of Bank term deposit Scheme with Feature Engineering steps mentioned above includes:-
+
+* *Random Forest(Auto ML-h2o)*
+
+* *Decision tree*
+
+* *XGboost*
+
+* *CatBoost*
+
+## Final Model Selection
+
+After comparing the results of all models we find the `Decision tree` model  and  the `CatBoost' model showing similar scores on Leaderboard.
+
+Our Final Model is Performing very well with `Binning of Age attributes`,`Re-leveling` and with `Balanced data`.
+
+Droping of `duration` column and `scaling` of the numerical columns is not improving the score of the model.  
+
+# Evaluation Metric
+
+Final Model selection done by Accuracy Score.
+
+# Submission
+ 
+Files included in the submission are:-
+
+1 *Source code*
+
+*  Data Analysis and Approach
+*  Predictive Model
+       
+2 *Model saved*
+
+* data_tree_relevel4.rds
+* model(Catboost Model)
+* XGboost_new2_mod.rds
+
+3 *Output file*
+
+* relevel_4.csv
+
+
+# Thank You,
+## [Anushree Tomar](anushree.tomar@gmail.com)
+
+
+
+
+
+
+
