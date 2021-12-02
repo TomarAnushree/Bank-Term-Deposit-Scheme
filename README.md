@@ -1,6 +1,7 @@
 # Bank-Term-Deposit-Scheme
 amex-ai-ml-hackathon-geek-goddess-2021
 ![](https://github.com/TomarAnushree/Bank-Term-Deposit-Scheme/blob/main/Bank%20Term%20Deposit%20Scheme/Capture.PNG)
+
 The banks are moving with the pace of technology and incorporating different techniques to get the clients on-board. There are multiple marketing techniques in the market different banks are resorting to get people involved into different banking schemes. One such technique is phone calling the clients, getting their details and letting them know about the different schemes. It might require multiple calls to the same client to figure out if the client will be on-board or not. It is where Machine Learning can be incorporated and the result can be predicted based on the information received. This information will be valuable to pay more attention to the customers who might be willing to get on-board and be in their contact. The models can be trained on the data set and the banks can plan out a strategy which will be beneficial for them. 
 
 # [Dataset Source:](https://www.techgig.com/geekgoddess/amex-ai-ml-hackathon-geek-goddess-2021)
